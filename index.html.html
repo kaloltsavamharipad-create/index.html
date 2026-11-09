@@ -1,0 +1,144 @@
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Malayalam:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#fbf6ea;color:#2a1d12;font:15px/1.5 'Noto Sans Malayalam',system-ui,sans-serif}
+header{background:transparent;border:0;box-shadow:none;color:#2a1d12;padding:14px 16px}
+header h1{margin:0;font-size:20px}
+main{max-width:1000px;margin:auto;padding:12px}
+.card{background:#fff;border:1px solid #e3d5b8;border-radius:10px;padding:12px;margin-bottom:12px;overflow-x:auto}
+.ctl{display:none;flex-wrap:wrap;gap:8px;align-items:end}
+.ctl label{font-size:13px;color:#7a6a58;display:block}
+select,button{font:inherit;padding:7px 10px;border:1px solid #c9b48f;border-radius:6px;background:#fff}
+button{background:#a4262c;color:#fff;border:0;cursor:pointer}
+table{border-collapse:collapse;width:100%;margin-top:6px}
+th,td{border:1px solid #d9c9a8;padding:4px 6px;font-size:14px;text-align:left;vertical-align:top}
+th{background:#f7efdc}
+h3{margin:14px 0 4px;font-size:16px}
+.late{color:#a00;font-weight:700}
+.ongoing{background:#fff3c4}
+.st{font-size:13px;color:#7a6a58}
+.sum{margin:4px 0}
+.vbox{border:0;border-radius:10px;overflow:hidden;margin-bottom:12px;background:#0b2a5b}
+.vhd{display:flex;align-items:center;gap:10px;background:#fff;color:#2a1d12;padding:6px 12px;font-weight:700;border-bottom:1px solid #e3d5b8}
+.vno{background:#ffd966;color:#0b2a5b;border-radius:6px;padding:2px 10px;white-space:nowrap}
+.vnm{font-size:16px}
+.live{margin-left:auto;background:#c00;color:#fff;padding:2px 8px;border-radius:4px;font-size:12px;animation:blink 1s steps(2,start) infinite}
+@keyframes blink{to{visibility:hidden}}
+.now{background:#0b2a5b;color:#fff;padding:6px 12px;font-size:15px;border-bottom:1px solid #1d4a8a}
+.now.idle{color:#aaa}
+.cur{background:#0b2a5b;color:#fff;padding:14px 16px}
+.cn{font-size:20px;font-weight:700}
+.cs{font-size:15px;font-weight:400;color:#ffd966}
+.cc{font-size:22px;color:#ffd966;margin-top:6px}
+.cur.idle{color:#cfd8e3;font-size:16px;font-weight:400}
+.fl{position:relative;background:#0b2a5b;min-height:58px;border-top:3px solid #c00;overflow:hidden}
+.fbadge{position:absolute;left:0;top:0;bottom:0;background:#c00;color:#fff;font-weight:700;font-size:13px;padding:0 12px;display:flex;align-items:center;z-index:2;letter-spacing:.5px}
+.fi{display:none;padding:13px 14px 13px 104px;color:#fff;font-size:18px;font-weight:700;letter-spacing:.2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fi.on{display:block;animation:flslide .7s cubic-bezier(.2,.8,.2,1)}
+.fi .ft{background:#ffd966;color:#0b2a5b;padding:0 6px;border-radius:3px;margin-right:6px}
+.fi .fs{color:#ffd966;font-weight:400;font-size:15px}
+@keyframes flslide{from{transform:translateX(100%);opacity:0}to{transform:none;opacity:1}}
+.rs{background:#fff8e1;color:#2a1d12;padding:6px 12px;font-size:14px;border-bottom:1px solid #e3d5b8}
+</style>
+<header><h1>&#3349;&#3378;&#3403;&#3364;&#3405;&#3384;&#3381;&#3330; &#8211; &#3364;&#3364;&#3405;&#3384;&#3374;&#3375; &#3374;&#3364;&#3405;&#3384;&#3376; &#3381;&#3391;&#3381;&#3376;&#3353;&#3405;&#3353;&#3454;</h1><div class="st" id="st">&#3378;&#3403;&#3361;&#3405; &#3354;&#3398;&#3375;&#3405;&#3375;&#3393;&#3368;&#3405;&#3368;&#3393;&#8230;</div></header>
+<main>
+  <div id="tick" class="noprint"></div>
+  <div class="card noprint ctl">
+    <div><label>&#3381;&#3399;&#3366;&#3391;</label><select id="ven"></select></div>
+    <div><label>&#3364;&#3392;&#3375;&#3364;&#3391;</label><select id="dat"></select></div>
+  </div>
+  <div class="card" id="sumbox"></div>
+  <div class="card" id="sched"></div>
+  <div id="results"></div>
+</main>
+<script>
+// Paste the Apps Script web app URL here (same URL as the admin app).
+const GS_URL='https://script.google.com/macros/s/AKfycbzUstlP97YRSC2qbRPco4WKjB6s_FowbPv4DTC8h13r5Sl_ztaVWV2hIBf-uN4Zv_vybA/exec';
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const t12=t=>{const m=/^(\d{1,2}):(\d{2})/.exec(String(t||''));if(!m)return t||'';let h=+m[1];const ap=h>=12?'PM':'AM';h=h%12||12;return h+'.'+m[2]+ap};
+const LBL={pending:'\u0D06\u0D30\u0D02\u0D2D\u0D3F\u0D1A\u0D4D\u0D1A\u0D3F\u0D32\u0D4D\u0D32',ongoing:'\u0D28\u0D1F\u0D15\u0D4D\u0D15\u0D41\u0D28\u0D4D\u0D28\u0D41',done:'\u0D2A\u0D42\u0D7C\u0D24\u0D4D\u0D24\u0D3F\u0D2F\u0D3E\u0D2F\u0D3F'};
+const POS=['','1st','2nd','3rd'];
+let P=null,L=null,ver=null,selV='',selD='',lastSig='';
+
+const fdt=d=>d?d.split('-').reverse().join('/'):'';
+const mins=t=>{const m=/^(\d{1,2}):(\d{2})/.exec(String(t||''));return m?(+m[1])*60+(+m[2]):null};
+const hm=m=>{if(m==null)return '';const h=Math.floor(m/60)%24,n=m%60;return t12(String(h).padStart(2,'0')+':'+String(n).padStart(2,'0'))};
+const dlTxt=v=>v==null?'\u2013':v>0?'\u0D35\u0D48\u0D15\u0D3F +'+v+' \u0D2E\u0D3F.':v<0?'\u0D28\u0D47\u0D30\u0D24\u0D4D\u0D24\u0D46 '+(-v)+' \u0D2E\u0D3F.':'\u0D15\u0D43\u0D24\u0D4D\u0D2F\u0D38\u0D2E\u0D2F\u0D02';
+const today=()=>{const d=new Date(),p=n=>String(n).padStart(2,'0');return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate())};
+const PV=()=>(P&&P.venues)||{};
+const dayOf=(v,d)=>((PV()[v]||{})[d])||{items:[]};
+function venueList(){
+  let vs;
+  if(L&&L.venues&&L.venues.length)vs=L.venues.map(x=>x.name);
+  else if(P)vs=(P.list&&P.list.length)?P.list:Object.keys(PV()).sort();
+  else vs=[];
+  return vs.slice().sort((a,b)=>{
+    const na=parseFloat(venueNo(a)),nb=parseFloat(venueNo(b));
+    const ka=isNaN(na)?1e9:na,kb=isNaN(nb)?1e9:nb;
+    return (ka-kb)||a.localeCompare(b);
+  });
+}
+function liveOf(v){return ((L&&L.venues)||[]).find(x=>x.name==v)||{}}
+function venueNo(v){return liveOf(v).no||((P&&P.vno)||{})[v]||''}
+// Running status comes from venue updates (pub/run) when present, otherwise from the admin's live data
+function stateOf(no,x){
+  const key=x.id+'|'+((L&&L.date)||''),rr=(RUN[no]||{})[key];
+  const start=rr?(rr.start||''):(x.start||''),end=rr?(rr.end||''):(x.end||'');
+  const done=(rr?rr.done:x.done)||[],list=x.list||[];
+  const cur=(rr?rr.cur:x.cur)||'';   // the code the stage manager entered
+  const tot=(rr&&+rr.total>0)?+rr.total:list.length;
+  return{start,end,done,cur,total:tot,rem:Math.max(0,tot-done.length),results:(rr&&rr.results)||[],status:end?'done':start?'ongoing':'pending'};
+}
+function todayItems(v){const no=venueNo(v);return (liveOf(v).items||[]).map(x=>Object.assign({},x,stateOf(no,x)))}
+async function load(){
+  try{
+    const all=await (await fetch(GS_URL+'?t='+Date.now(),{cache:'no-store'})).json();
+    const lv=all['pub/live'];
+    L=(lv&&lv.d)?JSON.parse(lv.d):null;
+    if(L&&L.hidden)L=null;
+    RUN={};
+    Object.keys(all).forEach(k=>{if(k.indexOf('pub/run/')!==0)return;const rest=k.slice(8),j=rest.indexOf('/');if(j<0)return;(RUN[rest.slice(0,j)]=RUN[rest.slice(0,j)]||{})[rest.slice(j+1)]=all[k]||{}});
+    const m=all['pub/meta'];
+    if(m&&!m.hidden&&m.n){
+      if(m.v!==ver){let json='';for(let n=0;n<(+m.n||0);n++)json+=((all['pub/s'+n]||{}).d)||'';P=JSON.parse(json);ver=m.v}
+    }else{P=null;ver=null}
+    const sig=JSON.stringify([L,ver,RUN]);
+    if(sig!==lastSig){lastSig=sig;render()}
+    $('st').textContent='\u0D05\u0D35\u0D38\u0D3E\u0D28\u0D02 \u0D2A\u0D41\u0D24\u0D41\u0D15\u0D4D\u0D15\u0D3F\u0D2F\u0D24\u0D4D: '+new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit',second:'2-digit'})+' (\u0D13\u0D30\u0D4B 12 \u0D38\u0D46\u0D15\u0D4D\u0D15\u0D7B\u0D21\u0D3F\u0D32\u0D41\u0D02 \u0D2A\u0D41\u0D24\u0D41\u0D15\u0D4D\u0D15\u0D41\u0D28\u0D4D\u0D28\u0D41)';
+  }catch(e){$('st').textContent='\u0D21\u0D3E\u0D31\u0D4D\u0D31 \u0D32\u0D2D\u0D4D\u0D2F\u0D2E\u0D32\u0D4D\u0D32 \u2013 \u0D07\u0D28\u0D4D\u0D31\u0D7C\u0D28\u0D46\u0D31\u0D4D\u0D31\u0D4D \u0D2A\u0D30\u0D3F\u0D36\u0D4B\u0D27\u0D3F\u0D15\u0D4D\u0D15\u0D41\u0D15'}
+}
+const lotOf=(x,c)=>((x.lots||{})[c])||'';
+function boxes(){
+  const vs=venueList();
+  if(!vs.length)return '<div class="card"><p>\u0D35\u0D47\u0D26\u0D3F\u0D15\u0D7E \u0D07\u0D24\u0D41\u0D35\u0D30\u0D46 \u0D1A\u0D47\u0D7C\u0D24\u0D4D\u0D24\u0D3F\u0D1F\u0D4D\u0D1F\u0D3F\u0D32\u0D4D\u0D32</p></div>';
+  return vs.map(v=>{
+    const no=venueNo(v),its=todayItems(v),run=its.filter(x=>x.status=='ongoing');
+    const head=`<div class="vhd"><span class="vno">${no?'\u0D35\u0D47\u0D26\u0D3F '+esc(no):'\u0D35\u0D47\u0D26\u0D3F'}</span><span class="vnm">${esc(v)}</span><span class="live">\u25CF LIVE</span></div>`;
+    // only the programmes running now; each one leaves the strip when it ends
+    const items=run.length
+      ? run.map(x=>`<div class="fi"><span class="ft">Code ${esc(x.cur||'\u2014')}</span> ${esc(x.name)} <span class="fs">(${esc(x.sec)})</span> &nbsp; <span class="fs">\u0D32\u0D4B\u0D1F\u0D4D\u0D1F\u0D4D:</span> <b>${esc(lotOf(x,x.cur)||'\u2014')}</b></div>`).join('')
+      : '<div class="fi">\u0D07\u0D2A\u0D4D\u0D2A\u0D4B\u0D7E \u0D2E\u0D24\u0D4D\u0D38\u0D30\u0D02 \u0D28\u0D1F\u0D15\u0D4D\u0D15\u0D41\u0D28\u0D4D\u0D28\u0D3F\u0D32\u0D4D\u0D32</div>';
+    return `<div class="vbox">${head}<div class="fl"><span class="fbadge">\u0D2B\u0D4D\u0D32\u0D3E\u0D37\u0D4D</span>${items}</div></div>`;
+  }).join('');
+}
+
+// TV-style news flash: lines slide in one after another
+let flT=[];
+function startFlash(){
+  flT.forEach(clearInterval);flT=[];
+  document.querySelectorAll('.fl').forEach(box=>{
+    const kids=[...box.querySelectorAll('.fi')];
+    if(!kids.length)return;
+    let i=0;kids[0].classList.add('on');
+    if(kids.length>1)flT.push(setInterval(()=>{kids[i].classList.remove('on');i=(i+1)%kids.length;kids[i].classList.add('on')},4000));
+  });
+}
+
+function render(){
+  $('tick').innerHTML=boxes();startFlash();
+  $('sumbox').innerHTML='';$('sched').innerHTML='';$('results').innerHTML='';
+}
+$('ven').onchange=e=>{selV=e.target.value;lastSig='';render()};
+$('dat').onchange=e=>{selD=e.target.value;lastSig='';render()};
+load();setInterval(load,12000);
+</script>
